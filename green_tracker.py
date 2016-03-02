@@ -5,9 +5,28 @@ import numpy as np
 import time
 
 
+
+class Vector(object):   # a vector class for convinience
+    def __init__(self,coords1,coords2):
+        self.x = coords1[0]-coords2[0]
+        self.y = coords1[1]-coords2[0]
+
+    def __str__(self):
+        return "<{},{}>".format(self.x,self.y)
+
+    def __mul__(this,that):
+        return this.x*that.x + this.y*that.y
+
+
+
 cap = cv2.VideoCapture(0)
 
-positions = []
+positions = [(0,0),(0,0),(0,0)]   # three previous positions
+eventPosition = (0,0)   # position of last event
+eventTime = time.time()
+
+lowerBound = np.array([150, 100, 100])
+upperBound = np.array([179, 255, 255])
 
 while True:
     change = False
@@ -18,8 +37,6 @@ while True:
 
     #lowerBound = np.array([0,0,0])
     #upperBound = np.array([179,255,255])
-    lowerBound = np.array([60, 64, 64])
-    upperBound = np.array([70, 255, 255])
 
     frame = cv2.bilateralFilter(source, 9,75,75)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)        # convert to HSV
@@ -33,7 +50,9 @@ while True:
     try:
         cx = int(M['m10']/M['m00'])    # gets current position
         cy = int(M['m01']/M['m00'])
-        positions.append((cx,cy))
+        positions[2] = positions[1]
+        positions[1] = positions[0]
+        positions[0] = (cx,cy)
     except ZeroDivisionError:
         cx = 0
         cy = 0
@@ -41,12 +60,17 @@ while True:
         cx = 0
         cy = 0
 
-    frame = cv2.bitwise_and(source,source,mask= frame)        # recolor
+    frame = cv2.bitwise_and(source,source,mask= frame)    # recolor
 
     cv2.circle(frame, (cx,cy), 10, (0,255,0))    # circles the center of the contour
 
-    for i in range(1,len(positions)):
-        cv2.line(frame, positions[i-1],positions[i], (255,255,255))
+    if Vector(positions[1],positions[2])*Vector(positions[0],positions[1]) < 0: # if a change in direction has occured
+        eventPosition = positions[0]
+        temp = eventTime
+        eventTime = time.time()
+        speed = 1000.0/(eventTime-temp)
+        print speed
+    cv2.circle(frame, eventPosition, 20, (0,0,255))
 
     # Display the resulting frame
     cv2.imshow('Your Face',frame)
