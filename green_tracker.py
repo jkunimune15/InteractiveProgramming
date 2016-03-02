@@ -13,7 +13,9 @@ while True:
     change = False
 
     # Capture frame-by-frame
+    print cap.read()
     _, source = cap.read()
+
     #lowerBound = np.array([0,0,0])
     #upperBound = np.array([179,255,255])
     lowerBound = np.array([60, 64, 64])
