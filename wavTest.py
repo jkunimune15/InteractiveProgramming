@@ -6,6 +6,8 @@ import math
 
 pygame.init()
 
+pygame.mixer.init(22100)
+
 pygame.mixer.music.load("music.wav")
 
 pygame.mixer.music.play()

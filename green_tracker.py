@@ -25,8 +25,8 @@ positions = [(0,0),(0,0),(0,0)]   # three previous positions
 eventPosition = (0,0)   # position of last event
 eventTime = time.time()
 
-lowerBound = np.array([150, 100, 100])
-upperBound = np.array([179, 255, 255])
+lowerBound = np.array([160, 100, 100])
+upperBound = np.array([169, 255, 255])
 
 while True:
     change = False
