@@ -3,6 +3,7 @@
 import cv2
 import numpy as np
 import time
+import imutils
 
 
 
@@ -25,8 +26,8 @@ positions = [(0,0),(0,0),(0,0)]   # three previous positions
 eventPosition = (0,0)   # position of last event
 eventTime = time.time()
 
-lowerBound = np.array([150, 100, 100])
-upperBound = np.array([179, 255, 255])
+lowerBound = np.array([1, 149, 155])
+upperBound = np.array([21, 255, 255])
 
 while True:
     change = False
@@ -38,9 +39,13 @@ while True:
     #lowerBound = np.array([0,0,0])
     #upperBound = np.array([179,255,255])
 
-    frame = cv2.bilateralFilter(source, 9,75,75)
+    #frame = cv2.bilateralFilter(source, 9,75,75)
+    source = imutils.resize(source, width=600)              # shrinks the image
+    frame = cv2.GaussianBlur(source, (11, 11), 0)          # smooths the image
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)        # convert to HSV
     frame = cv2.inRange(frame, lowerBound, upperBound)    # mask image
+    frame = cv2.erode(frame, None, iterations=2)            # eliminates small fluccuations
+    frame = cv2.dilate(frame, None, iterations=2)
     contours,_ = cv2.findContours(frame, 1, 2)
 
     try:

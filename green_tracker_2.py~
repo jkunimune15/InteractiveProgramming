@@ -8,29 +8,19 @@ import time
 import pygame
 
 
-
-#lowerBound = np.array([0,0,0])         #Everything
-#upperBound = np.array([179,255,255])
-#lowerBound = np.array([160, 64, 64])   #Magenta
-#upperBound = np.array([169, 255, 255])
-lowerBound = np.array([25,120,120])       #Chartreuse
-upperBound = np.array([30,255,255])
-
-
-
 def volAdjust(c_y):
-    ''' Input y coordinate (measured pos down from top of screen) cy
-    Outputs a volume scaled from 0 to 1 - higher is louder, lower is quiet
-    Coordinate system: 0 (top) to 480 (bottom)
-    Output coord system: 1 (top) to 0 (bottom)'''
-    c_y = -1.0 * c_y
-    vol = (float(c_y)/480) + 1.0
-    return vol
+    	''' Input y coordinate (measured pos down from top of screen) cy
+    		Outputs a volume scaled from 0 to 1 - higher is louder, lower is quiet
+    		Coordinate system: 0 (top) to 480 (bottom)
+    		Output coord system: 1 (top) to 0 (bottom)'''
+    	c_y = -1 * c_y
+    	vol = (float(c_y)/480) + 1.0
+    	return vol
 
 
 pygame.init()
 #Now to play some music...
-m = pygame.mixer.music.load('music.wav')
+m = pygame.mixer.music.load('testSong.ogg')
 pygame.mixer.init(1100, 16, 2, 4096) #frequency, size, channels, buffersize
 pygame.mixer.music.play()
 pygame.mixer.music.set_volume(0.01)
@@ -45,6 +35,11 @@ while True:
     # Capture frame-by-frame
     _, source = cap.read()
 
+    #lowerBound = np.array([0,0,0])
+    #upperBound = np.array([179,255,255])
+    lowerBound = np.array([60, 64, 64])
+    upperBound = np.array([70, 255, 255])
+
     frame = cv2.bilateralFilter(source, 9,75,75)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)        # convert to HSV
     frame = cv2.inRange(frame, lowerBound, upperBound)    # mask image
@@ -58,15 +53,19 @@ while True:
         cx = int(M['m10']/M['m00'])    # gets current position
         cy = int(M['m01']/M['m00'])
         positions.append((cx,cy))
-        if pygame.mixer.music.get_busy() == True:
-            Vol = volAdjust(cy)
-            pygame.mixer.music.set_volume(Vol)
     except ZeroDivisionError:
         cx = 0
         cy = 0
     except TypeError:
         cx = 0
         cy = 0
+
+
+	if pygame.mixer.music.get_busy() == True:
+		Vol = volAdjust(cy)
+    	pygame.mixer.music.set_volume(Vol)
+    
+
 
     frame = cv2.bitwise_and(source,source,mask= frame)        # recolor
 
