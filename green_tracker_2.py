@@ -9,10 +9,12 @@ import pygame
 
 
 
-#lowerBound = np.array([0,0,0])
+#lowerBound = np.array([0,0,0])         #Everything
 #upperBound = np.array([179,255,255])
-lowerBound = np.array([160, 64, 64])
-upperBound = np.array([169, 255, 255])
+#lowerBound = np.array([160, 64, 64])   #Magenta
+#upperBound = np.array([169, 255, 255])
+lowerBound = np.array([25,120,120])       #Chartreuse
+upperBound = np.array([30,255,255])
 
 
 
