@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import time
 import pygame
+import imutils
 
 
 
@@ -13,8 +14,10 @@ import pygame
 #upperBound = np.array([179,255,255])
 #lowerBound = np.array([160, 64, 64])   #Magenta
 #upperBound = np.array([169, 255, 255])
-lowerBound = np.array([25,120,120])       #Chartreuse
-upperBound = np.array([30,255,255])
+#lowerBound = np.array([25,120,120])       #Chartreuse
+#upperBound = np.array([30,255,255])
+lowerBound = np.array([162, 150, 71])   #Red
+upperBound = np.array([197, 205, 167])
 
 
 
@@ -45,9 +48,12 @@ while True:
     # Capture frame-by-frame
     _, source = cap.read()
 
-    frame = cv2.bilateralFilter(source, 9,75,75)
+    source = imutils.resize(source, width=600)              # shrinks the image
+    frame = cv2.GaussianBlur(source, (11, 11), 0)          # smooths the image
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)        # convert to HSV
     frame = cv2.inRange(frame, lowerBound, upperBound)    # mask image
+    frame = cv2.erode(frame, None, iterations=2)            # eliminates small fluccuations
+    frame = cv2.dilate(frame, None, iterations=2)
     contours,_ = cv2.findContours(frame, 1, 2)
 
     try:
