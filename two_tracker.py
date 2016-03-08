@@ -1,24 +1,39 @@
-""" Program to track the motion of a green thing and a pink thing"""
+""" Program to track the motion of a green thing and a red thing"""
 
 import cv2
 import numpy as np
 import time
 import imutils
+import pygame
 
+pygame.init()
+#Now to play some music...
+tracks = [pygame.mixer.Sound('tws0.wav'),pygame.mixer.Sound('tws1.wav'),pygame.mixer.Sound('tws2.wav'),pygame.mixer.Sound('tws3.wav')]
+
+for track in tracks:
+    track.set_volume(0.01)
+    track.play()
+
+screenWidth = 600
+screenHeight = 450
+columnWidth = screenWidth/4
 
 class Frame(object):
     ''' Take in the video frame that the webcam sees and extract from it where the baton is.'''
-    def __init__(self,color,position,volume=0):
+    def __init__(self,color,position,vol=0.01):
         self.x = position[0]
         self.y = position[1]
         self.prevx = 240 #middle of screen
         self.prevy = 240
-        # self.ppx = 240 # "previous previous x", aka two timesteps back - to calculate change in slope
-        # self.ppy = 240
 
         self.color = color
+        self.vol = vol
+        
         self.filteredFrame = None
-        self.vol = volume
+        self.y0 = None #y-value when the baton enters a column
+        self.vol0 = None #vol value when the baton enters a column
+        self.prevColumn = None
+        self.Column = None
 
     def mask(self):
         '''Remove everything in-frame that isn't the color we want'''
@@ -39,13 +54,37 @@ class Frame(object):
 
         self.x, self.y = cx, cy
 
-    def Vol(self):
-        ''' Input y coordinate (measured pos down from top of screen) cy
-        Outputs a volume scaled from 0 to 1 - higher is louder, lower is quiet
-        Coordinate system: 0 (top) to 480 (bottom)
-        Output coord system: 1 (top) to 0 (bottom)'''
-        self.vol = (-1.0*self.y/480.0) + 1.0
+    def volume_level(self):
+        vol_step_upper = (1.0 - self.vol0) / float(self.y0)
+        vol_step_lower = float(self.vol0) / (screenHeight - self.y0)
+
+        if self.y < self.y0: #actually means it is HIGHER bc dumb coordinates
+            self.vol += vol_step_upper * (self.y0 - self.y) #should be adding a positive quantity
+        elif self.y > self.y0:
+            self.vol += vol_step_lower * (self.y0 - self.y) #should be adding a negative quantity
+        elif self.y == self.y0:
+            self.vol = self.vol0
+        
         return self.vol
+
+    def volume_scale_change(self):
+        '''Resets y0 and vol0, the reference points of what y and vol are when you enter a new zone.'''
+        self.y0 = self.y
+        self.vol0 = (450-self.y) / 450
+
+    def whichColumn(self):
+        ''' Specify a baton and this function returns which zone it's in: 0, 1, 2, or 3.'''
+        if (self.x >= 0 and self.x < columnWidth):
+            return 0
+
+        elif (self.x >= columnWidth and self.x < 2*columnWidth):
+            return 1
+
+        elif (self.x >= 2*columnWidth and self.x < 3*columnWidth):
+            return 2
+
+        elif (self.x >= 3*columnWidth and self.x < screenWidth):
+            return 3
 
 
 class Color(object):
@@ -75,6 +114,9 @@ cap = cv2.VideoCapture(0)
 green_baton = Frame(limegreen)
 red_baton = Frame(red)
 
+for baton in [green_baton, red_baton]:
+    baton.prevColumn = baton.whichColumn()
+
 while True:
     # Capture frame-by-frame
     print cap.read()
@@ -97,6 +139,21 @@ while True:
     cv2.imshow('Your Face',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+    for baton in [green_baton,red_baton]:
+        baton.Column = baton.whichColumn()
+
+        #Has it changed to a new column?
+            #If so, reset the relative y0 and vol0.
+        if baton.Column != baton.prevColumn:
+            baton.volume_scale_change()
+
+        tracks[baton.Column].set_volume(baton.volume_level()) #Ok, now set the volume.
+
+        
+        #Reset "previous column"
+        baton.prevColumn = baton.Column
+
 
 # When everything done, release the capture
 cap.release()
