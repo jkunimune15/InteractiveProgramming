@@ -6,10 +6,10 @@ import math
 
 pygame.init()
 
-track1 = pygame.mixer.Sound("trackWind.wav")
-track2 = pygame.mixer.Sound("trackStrings.wav")
-track3 = pygame.mixer.Sound("trackBrass.wav")
-track4 = pygame.mixer.Sound("trackDrums.wav")
+track1 = pygame.mixer.Sound("tws3.wav")
+track2 = pygame.mixer.Sound("tws2.wav")
+track3 = pygame.mixer.Sound("tws1.wav")
+track4 = pygame.mixer.Sound("tws0.wav")
 
 track1.play()
 track2.play()
