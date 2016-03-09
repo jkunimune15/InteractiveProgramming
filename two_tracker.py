@@ -71,10 +71,10 @@ class Frame(object):
         
         return self.vol
 
-    def volume_scale_change(self):
+    def volume_scale_change(self,track):
         '''Resets y0 and vol0, the reference points of what y and vol are when you enter a new zone.'''
         self.y0 = self.y
-        self.vol0 = (450-self.y) / 450
+        self.vol0 = track.get_volume()
 
     def whichColumn(self):
         ''' Specify a baton and this function returns which zone it's in: 0, 1, 2, or 3.'''
@@ -104,9 +104,7 @@ class Color(object):
 
         self.vib_min = vib_min #vibrance
         self.vib_max = vib_max
-    def __str__(self):
-        return "Green" #TODO: make this actually tell you what color it is
-
+    
     def lowerBound(self):
         return np.array([self.hue_min,self.sat_min,self.vib_min])
     def upperBound(self):
@@ -158,7 +156,7 @@ while True:
         #Has it changed to a new column?
             #If so, reset the relative y0 and vol0.
         if baton.Column != baton.prevColumn:
-            baton.volume_scale_change()
+            baton.volume_scale_change(tracks[baton.Column])
 
         tracks[baton.Column].set_volume(baton.volume_level()) #Ok, now set the volume.
 
