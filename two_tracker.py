@@ -1,8 +1,9 @@
-""" Program to track the motion of a green thing and a red thing"""
+""" Program to conduct music from the webcam by holding colorful objects
+    and waving your hands around
+"""
 
 import cv2
 import numpy as np
-import time
 import imutils
 import pygame
 
@@ -111,13 +112,15 @@ class Color(object):
     def upperBound(self):
         return np.array([self.hue_max,self.sat_max,self.vib_max])
 
-limegreen = Color(31,41,92,243,60,194)
+limegreen = Color(31,41,92,243,60,194)  # define different colors
+darkgreen = Color(75,97,38,111,28,101)
+orange = Color(0,17,89,159,155,255)
 red = Color(166,189,92,158,86,234)
 
 cap = cv2.VideoCapture(0)
 
-green_baton = Frame(limegreen)
-red_baton = Frame(red)
+green_baton = Frame(orange)
+red_baton = Frame(limegreen)
 
 for baton in [green_baton, red_baton]:
     baton.prevColumn = baton.whichColumn()
@@ -140,6 +143,9 @@ while True:
     #frame = cv2.bitwise_and(source,source,mask= frame)    # recolor
     cv2.circle(source, (green_baton.x,green_baton.y), 10, (0,255,0))    # circles the center of the contour
     cv2.circle(source, (red_baton.x,red_baton.y), 10, (0,60,0)) #ELLIE NOTE: I changed the 255 to a 60 in that 3rd arg hoping it would be a different color
+    cv2.line(source, (1*screenWidth/4,0), (1*screenWidth/4,screenHeight), (0,0,0), thickness=2)
+    cv2.line(source, (2*screenWidth/4,0), (2*screenWidth/4,screenHeight), (0,0,0), thickness=2)
+    cv2.line(source, (3*screenWidth/4,0), (3*screenWidth/4,screenHeight), (0,0,0), thickness=2)
 
     # Display the resulting frame
     cv2.imshow('Conduct!',source)

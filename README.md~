@@ -1,0 +1,6 @@
+# InteractiveProgramming
+This is a program that allows the user to conduct music via the webcam. To run the code, simply enter
+
+	$ python two_tracker.py
+
+into the command line.
