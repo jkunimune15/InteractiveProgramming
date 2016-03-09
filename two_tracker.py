@@ -8,7 +8,7 @@ import pygame
 
 pygame.init()
 #Now to play some music...
-tracks = [pygame.mixer.Sound('tws0.wav'),pygame.mixer.Sound('tws1.wav'),pygame.mixer.Sound('tws2.wav'),pygame.mixer.Sound('tws3.wav')]
+tracks = [pygame.mixer.Sound('tws3.wav'),pygame.mixer.Sound('tws2.wav'),pygame.mixer.Sound('tws1.wav'),pygame.mixer.Sound('tws0.wav')]
 
 for track in tracks:
     track.set_volume(0.01)
@@ -20,7 +20,7 @@ columnWidth = screenWidth/4
 
 class Frame(object):
     ''' Take in the video frame that the webcam sees and extract from it where the baton is.'''
-    def __init__(self,color,position,vol=0.01):
+    def __init__(self,color,position=(0,0),vol=0.01):
         self.x = position[0]
         self.y = position[1]
         self.prevx = 240 #middle of screen
@@ -30,38 +30,41 @@ class Frame(object):
         self.vol = vol
         
         self.filteredFrame = None
-        self.y0 = None #y-value when the baton enters a column
-        self.vol0 = None #vol value when the baton enters a column
+        self.y0 = 0 #y-value when the baton enters a column
+        self.vol0 = 0 #vol value when the baton enters a column
         self.prevColumn = None
         self.Column = None
 
     def mask(self):
         '''Remove everything in-frame that isn't the color we want'''
-        return cv2.inRange(self.filteredFrame, self.color.lowerBound, self.color.upperBound)    # mask image
+        return cv2.inRange(self.filteredFrame, self.color.lowerBound(), self.color.upperBound())    # mask image
 
     def track(self,filteredFrame):
         ''' Masks frame, updates old x and y positions, finds and updates new x and y positions'''
         self.filteredFrame = filteredFrame
         maskedframe = self.mask()
         contours,_ = cv2.findContours(maskedframe, 1, 2)
-        M = cv2.moments(contours[0])
+        try:
+            M = cv2.moments(contours[0])
+        except IndexError:
+            pass
 
         # self.ppx, self.ppy = self.prevx, self.prevy #Reassign memory of old positions
         self.prevx, self.prevy = self.x, self.y
 
-        cx = int(M['m10']/M['m00'])    # gets current position
-        cy = int(M['m01']/M['m00'])
-
-        self.x, self.y = cx, cy
+        try:
+            self.x = int(M['m10']/M['m00'])    # gets current position
+            self.y = int(M['m01']/M['m00'])
+        except UnboundLocalError:
+            pass
+        except ZeroDivisionError:
+            pass
 
     def volume_level(self):
-        vol_step_upper = (1.0 - self.vol0) / float(self.y0)
-        vol_step_lower = float(self.vol0) / (screenHeight - self.y0)
-
         if self.y < self.y0: #actually means it is HIGHER bc dumb coordinates
-            self.vol += vol_step_upper * (self.y0 - self.y) #should be adding a positive quantity
+            self.vol = 1.0 - float(self.y)*(1-self.vol0)/(self.y0) #should be adding a positive quantity
         elif self.y > self.y0:
-            self.vol += vol_step_lower * (self.y0 - self.y) #should be adding a negative quantity
+            self.vol = self.vol0 - float(self.y-self.y0)*(self.vol0)/(screenHeight-self.y0) #should be adding a negative quantity
         elif self.y == self.y0:
             self.vol = self.vol0
         
@@ -89,8 +92,10 @@ class Frame(object):
 
 class Color(object):
     '''Allows quick creation of a color in HSV'''
-    def __init__(self, hue_min, hue_max = (hue_min + 23), sat_min=50, sat_max=255, vib_min=50, vib_max=255):
+    def __init__(self, hue_min, hue_max = None, sat_min=50, sat_max=255, vib_min=50, vib_max=255):
         self.hue_min = hue_min #hue
+        if hue_max == None:
+            hue_max = (hue_min + 23)
         self.hue_max = hue_max
 
         self.sat_min = sat_min #saturation
@@ -102,12 +107,12 @@ class Color(object):
         return "Green" #TODO: make this actually tell you what color it is
 
     def lowerBound(self):
-        return np.array([hue_min,sat_min,vib_min])
+        return np.array([self.hue_min,self.sat_min,self.vib_min])
     def upperBound(self):
-        return np.array([hue_max,sat_max,vib_max])
+        return np.array([self.hue_max,self.sat_max,self.vib_max])
 
-limegreen = Color(60,80)
-red = Color(1,25)
+limegreen = Color(31,41,92,243,60,194)
+red = Color(166,189,92,158,86,234)
 
 cap = cv2.VideoCapture(0)
 
@@ -119,10 +124,11 @@ for baton in [green_baton, red_baton]:
 
 while True:
     # Capture frame-by-frame
-    print cap.read()
+    #print cap.read()
     _, source = cap.read()
 
     source = imutils.resize(source, width=600)              # shrinks the image
+    source = cv2.flip(source,1)                             # flips image
     frame = cv2.GaussianBlur(source, (11, 11), 0)          # smooths the image
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)        # convert to HSV
     frame = cv2.erode(frame, None, iterations=2)            # eliminates small fluccuations
@@ -131,12 +137,12 @@ while True:
     green_baton.track(frame)
     red_baton.track(frame)
 
-    frame = cv2.bitwise_and(source,source,mask= frame)    # recolor
-    cv2.circle(frame, (green_baton.x,green_baton.y), 10, (0,255,0))    # circles the center of the contour
-    cv2.circle(frame, (red_baton.x,red_baton.y), 10, (0,60,0)) #ELLIE NOTE: I changed the 255 to a 60 in that 3rd arg hoping it would be a different color
+    #frame = cv2.bitwise_and(source,source,mask= frame)    # recolor
+    cv2.circle(source, (green_baton.x,green_baton.y), 10, (0,255,0))    # circles the center of the contour
+    cv2.circle(source, (red_baton.x,red_baton.y), 10, (0,60,0)) #ELLIE NOTE: I changed the 255 to a 60 in that 3rd arg hoping it would be a different color
 
     # Display the resulting frame
-    cv2.imshow('Your Face',frame)
+    cv2.imshow('Conduct!',source)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
